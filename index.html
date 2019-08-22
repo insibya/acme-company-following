@@ -15,6 +15,25 @@
       const { Component } = React;
       const { render } = ReactDOM;
 
+      const API = 'https://acme-users-api-rev.herokuapp.com/api';
+
+      const fetchUser = async ()=> {
+        const storage = window.localStorage;
+        const userId = storage.getItem('userId');
+        if(userId){
+          try {
+            return (await axios.get(`${API}/users/detail/${userId}`)).data;
+          }
+          catch(ex){
+            storage.removeItem('userId');
+            return fetchUser();
+          }
+        }
+        const user = (await axios.get(`${API}/users/random`)).data;
+        storage.setItem('userId', user.id);
+        return user;
+      };
+
       const CompanyFollowing= ({ company }) => {
         return (
           <li>
@@ -37,21 +56,26 @@
           }
         }
         async componentDidMount(){
+          const user = await fetchUser();
           const response = await axios.get('https://acme-users-api-rev.herokuapp.com/api/companies')
-          this.setState({ companies: response.data });
+          this.setState({ companies: response.data, user });
         }
         render(){
-          const { companies } = this.state;
-          console.log(companies)
+          const { companies, user } = this.state;
+          console.log(user)
           return (
-            <ul>
-              {
-                companies.map( company => <CompanyFollowing
-                  key={ company.id }
-                  company={ company }
-                />)
-              }
-            </ul>
+            <div>
+              <h1>Acme Company Follower</h1>
+              <h3>You { user.fullName} are following  companies</h3>
+              <ul>
+                {
+                  companies.map( company => <CompanyFollowing
+                    key={ company.id }
+                    company={ company }
+                  />)
+                }
+              </ul>
+            </div>
           )
         }
       }
