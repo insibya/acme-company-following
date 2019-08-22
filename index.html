@@ -23,6 +23,14 @@
             user: {}
           }
         }
+        async componentDidMount(){
+          const response = await axios.get('https://acme-users-api-rev.herokuapp.com/api/companies')
+          this.setState({ companies: response.data });
+        }
+        render(){
+          const companies = this.state;
+          return <hr/>
+        }
       }
       
       const root = document.querySelector('#root');
