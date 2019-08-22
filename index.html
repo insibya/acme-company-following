@@ -34,11 +34,11 @@
         return user;
       };
 
-      const CompanyFollowing= ({ company }) => {
+      const CompanyFollowing= ({ company, followed, onChange }) => {
         return (
           <li>
             { company.name }
-            <select>
+            <select value={ followed ? followed.rating : ''} onChange={ ev => onChange(company, followed, ev.target.value) }>
               {
                 ['', 1, 2, 3, 4, 5].map( num => <option key={ num }>{ num }</option>)
               }
@@ -54,24 +54,43 @@
             companies: [],
             user: {}
           }
+          this.onChange = this.onChange.bind(this);
         }
+        
+        async onChange(user, company, followed, rating){
+          console.log(followed, rating)
+          if(followed){
+            if(rating){
+              await axios.put(`${API}/users/${ user.id }/followingCompanies`);
+            } else {
+              await axios.post(`${API}/users/${ user.id }/followingCompanies`);
+            }
+          } else {
+            await axios.delete(`${API}/users/${ user.id }/followingCompanies`);
+          }
+        }
+        
         async componentDidMount(){
           const user = await fetchUser();
-          const response = await axios.get('https://acme-users-api-rev.herokuapp.com/api/companies')
-          this.setState({ companies: response.data, user });
+          const response = await axios.get(`${API}/companies`)
+          const following = (await axios(`${API}/users/${ user.id }/followingCompanies`)).data
+          this.setState({ companies: response.data, user, following });
         }
+        
         render(){
-          const { companies, user } = this.state;
-          console.log(user)
+          const { onChange } = this;
+          const { companies, user, following } = this.state;
           return (
             <div>
               <h1>Acme Company Follower</h1>
-              <h3>You { user.fullName} are following  companies</h3>
+              <h3>You { user.fullName} are following { following ? following.length : null } companies</h3>
               <ul>
                 {
                   companies.map( company => <CompanyFollowing
                     key={ company.id }
                     company={ company }
+                    onChange={ onChange }
+                    followed={ following.find(f => f.companyId === company.id )}
                   />)
                 }
               </ul>
